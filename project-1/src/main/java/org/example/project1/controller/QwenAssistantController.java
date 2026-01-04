@@ -5,7 +5,9 @@ import org.example.project1.pojo.Result;
 import org.example.project1.pojo.dto.QwenChatRequest;
 import org.example.project1.pojo.dto.QwenChatResponse;
 import org.example.project1.servie.QwenAssistantService;
+import org.example.project1.util.RequestValidator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -24,6 +26,12 @@ public class QwenAssistantController {
     @Autowired
     private QwenAssistantService qwenAssistantService;
 
+    @Value("${dashscope.conversation.stream-timeout:120000}")
+    private long streamTimeout;
+
+    @Value("${dashscope.conversation.error-timeout:30000}")
+    private long errorTimeout;
+
     /**
      * 文本对话接口：发送消息，获取AI回复
      *
@@ -32,8 +40,9 @@ public class QwenAssistantController {
      */
     @PostMapping("/chat")
     public Result<QwenChatResponse> chat(@RequestBody QwenChatRequest request) {
-        if (request.getMessage() == null || request.getMessage().trim().isEmpty()) {
-            return Result.fail("消息内容不能为空");
+        String validationError = RequestValidator.validateChatRequest(request);
+        if (validationError != null) {
+            return Result.fail(validationError);
         }
 
         try {
@@ -83,23 +92,24 @@ public class QwenAssistantController {
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String conversationId) {
         
-        if (message == null || message.trim().isEmpty()) {
-            SseEmitter emitter = new SseEmitter(30000L);
-            try {
-                emitter.send(SseEmitter.event().name("error").data("消息内容不能为空"));
-            } catch (Exception e) {
-                log.error("发送错误消息失败", e);
-            }
-            emitter.completeWithError(new IllegalArgumentException("消息内容不能为空"));
-            return emitter;
-        }
-
         QwenChatRequest request = new QwenChatRequest();
         request.setMessage(message);
         request.setUserId(userId);
         request.setConversationId(conversationId);
+        
+        String validationError = RequestValidator.validateChatRequest(request);
+        if (validationError != null) {
+            SseEmitter emitter = new SseEmitter(errorTimeout);
+            try {
+                emitter.send(SseEmitter.event().name("error").data(validationError));
+            } catch (Exception e) {
+                log.error("发送错误消息失败", e);
+            }
+            emitter.completeWithError(new IllegalArgumentException(validationError));
+            return emitter;
+        }
 
-        SseEmitter emitter = new SseEmitter(120000L); // 2分钟超时
+        SseEmitter emitter = new SseEmitter(streamTimeout);
         qwenAssistantService.chatStream(request, emitter);
         return emitter;
     }
@@ -112,18 +122,19 @@ public class QwenAssistantController {
      */
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chatStreamPost(@RequestBody QwenChatRequest request) {
-        if (request.getMessage() == null || request.getMessage().trim().isEmpty()) {
-            SseEmitter emitter = new SseEmitter(30000L);
+        String validationError = RequestValidator.validateChatRequest(request);
+        if (validationError != null) {
+            SseEmitter emitter = new SseEmitter(errorTimeout);
             try {
-                emitter.send(SseEmitter.event().name("error").data("消息内容不能为空"));
+                emitter.send(SseEmitter.event().name("error").data(validationError));
             } catch (Exception e) {
                 log.error("发送错误消息失败", e);
             }
-            emitter.completeWithError(new IllegalArgumentException("消息内容不能为空"));
+            emitter.completeWithError(new IllegalArgumentException(validationError));
             return emitter;
         }
 
-        SseEmitter emitter = new SseEmitter(120000L); // 2分钟超时
+        SseEmitter emitter = new SseEmitter(streamTimeout);
         qwenAssistantService.chatStream(request, emitter);
         return emitter;
     }

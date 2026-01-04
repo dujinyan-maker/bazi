@@ -31,6 +31,11 @@ dashscope:
     name: qwen-flash
   # API地址（通常不需要修改）
   api-url: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+  # 对话历史配置
+  conversation:
+    max-history: 50  # 最大历史记录条数
+    stream-timeout: 120000  # 流式输出超时时间（毫秒），默认2分钟
+    error-timeout: 30000  # 错误响应超时时间（毫秒），默认30秒
 
 
 

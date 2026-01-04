@@ -16,6 +16,8 @@ import org.example.project1.pojo.domain.ConversationHistory;
 import org.example.project1.pojo.dto.QwenChatRequest;
 import org.example.project1.pojo.dto.QwenChatResponse;
 import org.example.project1.servie.QwenAssistantService;
+import org.example.project1.util.MessageConverter;
+import org.example.project1.util.RequestValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -54,6 +56,15 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
     @Value("${dashscope.api-url:https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}")
     private String apiUrl;
 
+    @Value("${dashscope.conversation.max-history:50}")
+    private int maxHistory;
+
+    @Value("${dashscope.conversation.stream-timeout:120000}")
+    private long streamTimeout;
+
+    @Value("${dashscope.conversation.error-timeout:30000}")
+    private long errorTimeout;
+
     @Autowired
     private ConversationHistoryMapper conversationHistoryMapper;
 
@@ -83,52 +94,32 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
     /**
      * 加载对话历史
      */
-    private List<Message> loadConversationHistory(String conversationId, Long userId, int maxHistory) {
-        List<Message> historyMessages = new ArrayList<>();
-        
+    private List<ConversationHistory> loadConversationHistories(String conversationId, Long userId) {
         try {
             List<ConversationHistory> histories;
             if (conversationId != null && !conversationId.trim().isEmpty()) {
-                // 根据会话ID加载
                 histories = conversationHistoryMapper.selectByConversationId(conversationId, maxHistory);
             } else if (userId != null) {
-                // 根据用户ID加载最近的历史
                 histories = conversationHistoryMapper.selectByUserId(userId, null, maxHistory);
             } else {
-                return historyMessages;
+                return new ArrayList<>();
             }
 
-            // 转换为Message列表
-            for (ConversationHistory history : histories) {
-                String role = history.getRole();
-                if ("user".equals(role)) {
-                    historyMessages.add(Message.builder()
-                            .role(Role.USER.getValue())
-                            .content(history.getContent())
-                            .build());
-                } else if ("assistant".equals(role)) {
-                    historyMessages.add(Message.builder()
-                            .role(Role.ASSISTANT.getValue())
-                            .content(history.getContent())
-                            .build());
-                }
-            }
-            
-            log.info("加载对话历史，会话ID: {}, 用户ID: {}, 历史条数: {}", conversationId, userId, historyMessages.size());
-            if (historyMessages.size() > 0) {
-                log.info("历史对话摘要: 前3条 - {}", 
-                    historyMessages.stream()
+            log.info("加载对话历史，会话ID: {}, 用户ID: {}, 历史条数: {}", conversationId, userId, histories.size());
+            if (!histories.isEmpty()) {
+                log.debug("历史对话摘要: 前3条 - {}", 
+                    histories.stream()
                         .limit(3)
-                        .map(msg -> msg.getRole() + ": " + 
-                            (msg.getContent().length() > 50 ? msg.getContent().substring(0, 50) + "..." : msg.getContent()))
+                        .map(h -> h.getRole() + ": " + 
+                            (h.getContent().length() > 50 ? h.getContent().substring(0, 50) + "..." : h.getContent()))
                         .reduce((a, b) -> a + " | " + b)
                         .orElse("无"));
             }
+            return histories;
         } catch (Exception e) {
-            log.error("加载对话历史失败", e);
+            log.error("加载对话历史失败，会话ID: {}, 用户ID: {}", conversationId, userId, e);
+            return new ArrayList<>();
         }
-        
-        return historyMessages;
     }
 
     /**
@@ -158,9 +149,11 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
         QwenChatResponse response = new QwenChatResponse();
         
         try {
-            if (request.getMessage() == null || request.getMessage().trim().isEmpty()) {
+            // 验证请求
+            String validationError = RequestValidator.validateChatRequest(request);
+            if (validationError != null) {
                 response.setSuccess(false);
-                response.setError("消息内容不能为空");
+                response.setError(validationError);
                 return response;
             }
 
@@ -168,22 +161,18 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
             String conversationId = getOrCreateConversationId(request);
             request.setConversationId(conversationId);
 
-            // 先加载对话历史（最多50条，不包含当前消息）
-            List<Message> historyMessages = loadConversationHistory(conversationId, request.getUserId(), 50);
+            // 加载对话历史
+            List<ConversationHistory> histories = loadConversationHistories(conversationId, request.getUserId());
+            List<Message> historyMessages = MessageConverter.convertToMessages(histories);
             
-            // 构建消息列表（包含历史对话）
-            List<Message> messages = new ArrayList<>();
-            
-            // 添加历史对话
-            messages.addAll(historyMessages);
-            
-            // 添加当前用户消息
+            // 构建消息列表（包含历史对话和当前消息）
+            List<Message> messages = new ArrayList<>(historyMessages);
             messages.add(Message.builder()
                     .role(Role.USER.getValue())
                     .content(request.getMessage())
                     .build());
             
-            // 保存用户消息（在构建消息列表之后）
+            // 保存用户消息
             saveConversation(conversationId, request.getUserId(), "user", request.getMessage());
 
             // 构建请求参数
@@ -246,17 +235,45 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
         return response;
     }
 
+    /**
+     * 构建流式请求体
+     */
+    private Map<String, Object> buildStreamRequest(List<ConversationHistory> histories, String userMessage) {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", modelName);
+        
+        // 构建消息列表
+        List<Map<String, String>> messages = new ArrayList<>();
+        
+        // 添加系统提示词
+        if (PromptContent.BAZI_READING_PROMPT != null && !PromptContent.BAZI_READING_PROMPT.trim().isEmpty()) {
+            messages.add(MessageConverter.createSystemMessage(PromptContent.BAZI_READING_PROMPT));
+        }
+        
+        // 添加历史对话
+        messages.addAll(MessageConverter.convertToMapList(histories));
+        
+        // 添加当前用户消息
+        messages.add(MessageConverter.createUserMessage(userMessage));
+        
+        requestBody.put("messages", messages);
+        requestBody.put("stream", true);
+        return requestBody;
+    }
+
     @Override
     public void chatStream(QwenChatRequest request, SseEmitter emitter) {
         String conversationId = null;
         StringBuilder fullAnswer = new StringBuilder();
         
         try {
-            if (request.getMessage() == null || request.getMessage().trim().isEmpty()) {
+            // 验证请求
+            String validationError = RequestValidator.validateChatRequest(request);
+            if (validationError != null) {
                 emitter.send(SseEmitter.event()
                         .name("error")
-                        .data("消息内容不能为空"));
-                emitter.completeWithError(new IllegalArgumentException("消息内容不能为空"));
+                        .data(validationError));
+                emitter.completeWithError(new IllegalArgumentException(validationError));
                 return;
             }
 
@@ -264,28 +281,10 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
             conversationId = getOrCreateConversationId(request);
             request.setConversationId(conversationId);
 
-            // 先加载对话历史（最多50条，不包含当前消息）
-            List<ConversationHistory> histories;
-            if (conversationId != null && !conversationId.trim().isEmpty()) {
-                histories = conversationHistoryMapper.selectByConversationId(conversationId, 50);
-            } else if (request.getUserId() != null) {
-                histories = conversationHistoryMapper.selectByUserId(request.getUserId(), null, 50);
-            } else {
-                histories = new ArrayList<>();
-            }
+            // 加载对话历史
+            List<ConversationHistory> histories = loadConversationHistories(conversationId, request.getUserId());
 
-            log.info("加载对话历史，会话ID: {}, 用户ID: {}, 历史条数: {}", conversationId, request.getUserId(), histories.size());
-            if (histories.size() > 0) {
-                log.info("历史对话摘要: 前3条 - {}", 
-                    histories.stream()
-                        .limit(3)
-                        .map(h -> h.getRole() + ": " + 
-                            (h.getContent().length() > 50 ? h.getContent().substring(0, 50) + "..." : h.getContent()))
-                        .reduce((a, b) -> a + " | " + b)
-                        .orElse("无"));
-            }
-
-            // 保存用户消息（在加载历史之后）
+            // 保存用户消息
             saveConversation(conversationId, request.getUserId(), "user", request.getMessage());
 
             log.info("发送流式消息到通义千问，模型: {}, 会话ID: {}, 消息: {}", modelName, conversationId, request.getMessage());
@@ -301,43 +300,7 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
                     .data("开始生成回复..."));
 
             // 构建请求体（兼容OpenAI格式）
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", modelName);
-            
-            // 构建消息列表
-            List<Map<String, String>> messages = new ArrayList<>();
-            
-            // 添加系统提示词
-            if (PromptContent.BAZI_READING_PROMPT != null && !PromptContent.BAZI_READING_PROMPT.trim().isEmpty()) {
-                Map<String, String> systemMsg = new HashMap<>();
-                systemMsg.put("role", "system");
-                systemMsg.put("content", PromptContent.BAZI_READING_PROMPT);
-                messages.add(systemMsg);
-            }
-            
-            // 添加历史对话
-            for (ConversationHistory history : histories) {
-                Map<String, String> historyMsg = new HashMap<>();
-                historyMsg.put("role", history.getRole());
-                historyMsg.put("content", history.getContent());
-                messages.add(historyMsg);
-            }
-            
-            // 添加当前用户消息
-            Map<String, String> userMsg = new HashMap<>();
-            userMsg.put("role", "user");
-            userMsg.put("content", request.getMessage());
-            messages.add(userMsg);
-            
-            requestBody.put("messages", messages);
-            requestBody.put("stream", true);  // 启用流式输出
-
-            // 设置请求头
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(apiKey);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            Map<String, Object> requestBody = buildStreamRequest(histories, request.getMessage());
 
             // 使用HTTP流式请求
             URL url = new URL(apiUrl);
