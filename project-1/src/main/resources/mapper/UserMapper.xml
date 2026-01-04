@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.project1.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.project1.pojo.domain.Users">
+        <id column="id" property="id"/>
+        <result column="nickname" property="nickname"/>
+        <result column="real_name" property="realName"/>
+        <result column="birthday" property="birthday"/>
+        <result column="gender" property="gender"/>
+        <result column="openid" property="openid"/>
+        <result column="is_member" property="isMember"/>
+        <result column="member_start_time" property="memberStartTime"/>
+        <result column="member_expire_time" property="memberExpireTime"/>
+        <result column="register_time" property="registerTime"/>
+        <result column="phone" property="phone"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+    </resultMap>
+
+    <select id="selectByOpenid" resultMap="BaseResultMap">
+        SELECT * FROM users WHERE openid = #{openid}
+    </select>
+
+    <select id="selectByPhone" resultMap="BaseResultMap">
+        SELECT * FROM users WHERE phone = #{phone}
+    </select>
+
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (
+            nickname, real_name, birthday, gender, openid,
+            is_member, member_start_time, member_expire_time,
+            register_time, phone, last_login_time
+        ) VALUES (
+            #{nickname}, #{realName}, #{birthday}, #{gender}, #{openid},
+            #{isMember}, #{memberStartTime}, #{memberExpireTime},
+            #{registerTime}, #{phone}, #{lastLoginTime}
+        )
+    </insert>
+
+    <update id="updateUser">
+        UPDATE users
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="isMember != null">is_member = #{isMember},</if>
+            <if test="memberStartTime != null">member_start_time = #{memberStartTime},</if>
+            <if test="memberExpireTime != null">member_expire_time = #{memberExpireTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLastLoginTime">
+        UPDATE users SET last_login_time = NOW() WHERE id = #{userId}
+    </update>
+
+</mapper>
+

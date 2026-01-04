@@ -7,6 +7,7 @@ spring:
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+
 # MyBatis Configuration (optional)
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -17,7 +18,7 @@ mybatis:
 server:
   port: 8081
 
-# AI助手配置
+# AI助手配置（扣子AI）
 ai:
   api:
     url: https://api.coze.cn/v3/chat  # AI API地址
@@ -28,6 +29,22 @@ ai:
   polling:
     max-attempts: 30  # 最大轮询次数
     interval: 2000    # 轮询间隔（毫秒）
+
+# 百炼千帆（通义千问）配置
+dashscope:
+  api-key: sk-cd08bb79967d46afbe04113ff567018e  # 请替换为你的百炼千帆API Key（从百炼控制台获取）
+  # 模型配置
+  model:
+    # 可选模型：
+    # qwen-turbo - 快速响应，适合对话场景
+    # qwen-plus - 平衡性能和效果
+    # qwen-max - 最强性能，适合复杂任务
+    # qwen-max-longcontext - 支持长上下文
+    name: qwen-flash
+  # API地址（通常不需要修改）
+  api-url: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+
+
 
 # 微信小程序配置
 wechat:
