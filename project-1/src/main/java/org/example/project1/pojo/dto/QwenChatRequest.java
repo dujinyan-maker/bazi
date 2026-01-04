@@ -16,7 +16,10 @@ public class QwenChatRequest implements Serializable {
     /** 用户消息内容 */
     private String message;
 
-    /** 对话历史（可选，用于保持上下文） */
+    /** 用户ID（可选，用于关联用户对话历史） */
+    private Long userId;
+
+    /** 会话ID（可选，用于区分不同的对话会话，如果不提供会自动生成） */
     private String conversationId;
 }
 
