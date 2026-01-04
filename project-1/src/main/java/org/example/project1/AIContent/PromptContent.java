@@ -1,9 +1,5 @@
 package org.example.project1.AIContent;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * TODO
  *

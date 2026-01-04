@@ -115,6 +115,15 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
             }
             
             log.info("加载对话历史，会话ID: {}, 用户ID: {}, 历史条数: {}", conversationId, userId, historyMessages.size());
+            if (historyMessages.size() > 0) {
+                log.info("历史对话摘要: 前3条 - {}", 
+                    historyMessages.stream()
+                        .limit(3)
+                        .map(msg -> msg.getRole() + ": " + 
+                            (msg.getContent().length() > 50 ? msg.getContent().substring(0, 50) + "..." : msg.getContent()))
+                        .reduce((a, b) -> a + " | " + b)
+                        .orElse("无"));
+            }
         } catch (Exception e) {
             log.error("加载对话历史失败", e);
         }
@@ -132,10 +141,15 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
             history.setConversationId(conversationId);
             history.setRole(role);
             history.setContent(content);
-            conversationHistoryMapper.insertConversation(history);
-            log.debug("保存对话记录，会话ID: {}, 角色: {}, 内容长度: {}", conversationId, role, content != null ? content.length() : 0);
+            int result = conversationHistoryMapper.insertConversation(history);
+            if (result > 0) {
+                log.info("保存对话记录成功，会话ID: {}, 角色: {}, 内容长度: {}, 记录ID: {}", 
+                    conversationId, role, content != null ? content.length() : 0, history.getId());
+            } else {
+                log.warn("保存对话记录失败，影响行数为0，会话ID: {}, 角色: {}", conversationId, role);
+            }
         } catch (Exception e) {
-            log.error("保存对话记录失败", e);
+            log.error("保存对话记录异常，会话ID: {}, 角色: {}", conversationId, role, e);
         }
     }
 
@@ -260,12 +274,24 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
                 histories = new ArrayList<>();
             }
 
+            log.info("加载对话历史，会话ID: {}, 用户ID: {}, 历史条数: {}", conversationId, request.getUserId(), histories.size());
+            if (histories.size() > 0) {
+                log.info("历史对话摘要: 前3条 - {}", 
+                    histories.stream()
+                        .limit(3)
+                        .map(h -> h.getRole() + ": " + 
+                            (h.getContent().length() > 50 ? h.getContent().substring(0, 50) + "..." : h.getContent()))
+                        .reduce((a, b) -> a + " | " + b)
+                        .orElse("无"));
+            }
+
             // 保存用户消息（在加载历史之后）
             saveConversation(conversationId, request.getUserId(), "user", request.getMessage());
 
             log.info("发送流式消息到通义千问，模型: {}, 会话ID: {}, 消息: {}", modelName, conversationId, request.getMessage());
             System.out.println("=== 开始流式对话 ===");
             System.out.println("会话ID: " + conversationId);
+            System.out.println("历史对话条数: " + histories.size());
             System.out.println("用户消息: " + request.getMessage());
             System.out.println("AI回复: ");
 
