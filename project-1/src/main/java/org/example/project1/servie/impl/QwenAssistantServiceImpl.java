@@ -81,6 +81,7 @@ public class QwenAssistantServiceImpl implements QwenAssistantService {
                 response.setAnswer(answer);
                 response.setSuccess(true);
                 log.info("通义千问回复成功，回复长度: {}", answer != null ? answer.length() : 0);
+                log.info("通义千wen回复: {}", answer);
             } else {
                 response.setSuccess(false);
                 response.setError("未获取到AI回复");
