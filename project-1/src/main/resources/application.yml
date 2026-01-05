@@ -6,6 +6,19 @@ spring:
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
+  # Redis配置
+  data:
+    redis:
+      host: localhost  # Redis服务器地址
+      port: 6379  # Redis服务器端口
+      password:  # Redis密码（如果有）
+      database: 0  # 使用的数据库索引（0-15）
+      timeout: 5000  # 连接超时时间（毫秒）
+      lettuce:
+        pool:
+          max-active: 8  # 连接池最大连接数
+          max-idle: 8  # 连接池最大空闲连接数
+          min-idle: 0  # 连接池最小空闲连接数
 
 
 # MyBatis Configuration (optional)
@@ -51,4 +64,13 @@ wechat:
 jwt:
   secret: your-jwt-secret-key-minimum-256-bits-change-this-in-production  # JWT密钥，生产环境请修改
   expiration: 86400000  # Token过期时间（毫秒），默认24小时
+
+# 短信验证码配置
+sms:
+  # 测试模式：true-不实际发送短信，只打印日志；false-调用真实短信服务
+  test-mode: true
+  # 验证码配置
+  code:
+    expire-minutes: 5  # 验证码有效期（分钟）
+    send-interval-seconds: 60  # 发送间隔（秒），防止频繁发送
 
