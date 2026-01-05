@@ -32,5 +32,11 @@ public class ProductController {
     return Result.success(list);
     }
 
+    @GetMapping("/list")
+    public Result<List<product>>list(){
+    List<product> list =productService.list();
+    return Result.success(list);
+    }
+
 
 }

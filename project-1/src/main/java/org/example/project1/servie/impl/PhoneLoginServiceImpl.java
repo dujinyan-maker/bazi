@@ -43,7 +43,7 @@ public class PhoneLoginServiceImpl implements PhoneLoginService {
     private final Random random = new Random();
 
     @Override
-    public boolean sendVerificationCode(String phone) {
+    public boolean   sendVerificationCode(String phone) {
         // 1. 验证手机号格式
         if (phone == null || !phone.matches("^1[3-9]\\d{9}$")) {
             log.warn("手机号格式错误: {}", phone);

@@ -32,4 +32,10 @@ public class ProductServiceImpl implements ProductService {
         }
         return list;
     }
+
+    @Override
+    public List<product> list() {
+        List<product> list=productMapper.list();
+        return list;
+    }
 }

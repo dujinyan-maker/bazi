@@ -16,4 +16,7 @@ import java.util.List;
 public interface ProductMapper {
     @Select("select name,description, price,image_url from membership_types where id = #{id}")
     product query(Integer id);
+
+    @Select("select name,description, price,image_url from membership_types")
+    List<product> list();
 }

@@ -20,4 +20,10 @@ public interface ProductService {
      * @return
      */
     List<product> query(String ids);
+    /**
+     * 查询所有产品
+     * @return
+     */
+
+    List<product> list();
 }
