@@ -34,11 +34,6 @@ public class UserCenterController {
     /**
      * 测试接口（用于验证响应是否正常）
      */
-    @GetMapping("/test")
-    public Result<String> test() {
-        return Result.success("测试成功", "这是一个测试响应");
-    }
-
     @GetMapping("/getUser")
     public Result<Users> getUser(HttpServletRequest request) {
         log.info("收到获取用户信息请求");

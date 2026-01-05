@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.project1.mapper.OrderMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.project1.pojo.domain.orders">
+        <id column="order_id" property="orderId"/>
+        <result column="user_id" property="userId"/>
+        <result column="membership_type_id" property="membershipTypeId"/>
+        <result column="order_number" property="orderNumber"/>
+        <result column="product_name_snapshot" property="productNameSnapshot"/>
+        <result column="status" property="status"/>
+        <result column="payment_completed_at" property="paymentCompletedAt"/>
+        <result column="expected_effective_time" property="expectedEffectiveTime"/>
+    </resultMap>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM orders
+        WHERE user_id = #{userId}
+        ORDER BY payment_completed_at DESC
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM orders
+        WHERE order_id = #{orderId}
+    </select>
+
+</mapper>
+
