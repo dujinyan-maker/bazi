@@ -14,6 +14,14 @@ import org.example.project1.pojo.domain.Users;
 public interface UserMapper {
 
     /**
+     * 根据ID查询用户
+     *
+     * @param id 用户ID
+     * @return 用户信息
+     */
+    Users selectById(@Param("id") Long id);
+
+    /**
      * 根据openid查询用户
      *
      * @param openid 微信openid

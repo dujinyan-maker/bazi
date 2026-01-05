@@ -14,8 +14,13 @@
         <result column="member_expire_time" property="memberExpireTime"/>
         <result column="register_time" property="registerTime"/>
         <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
         <result column="last_login_time" property="lastLoginTime"/>
     </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
 
     <select id="selectByOpenid" resultMap="BaseResultMap">
         SELECT * FROM users WHERE openid = #{openid}
