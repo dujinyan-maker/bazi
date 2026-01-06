@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.List;
 
 /**
@@ -29,7 +30,7 @@ public class BlessingMessageController {
     /**
      * 发送祝福语
      *
-     * @param request 祝福语请求
+     * @param request     祝福语请求
      * @param httpRequest HTTP请求（用于获取用户ID）
      * @return 发送结果
      */
@@ -37,7 +38,7 @@ public class BlessingMessageController {
     public Result<BlessingMessageResponse> sendMessage(
             @RequestBody BlessingMessageRequest request,
             HttpServletRequest httpRequest) {
-        
+
         // 获取当前登录用户ID
         Long userId = UserContext.getCurrentUserId(httpRequest);
         if (userId == null) {
@@ -77,7 +78,7 @@ public class BlessingMessageController {
     /**
      * 获取当前用户的祝福语列表
      *
-     * @param limit 限制数量（可选，默认50）
+     * @param limit       限制数量（可选，默认50）
      * @param httpRequest HTTP请求（用于获取用户ID）
      * @return 祝福语列表
      */
@@ -85,7 +86,7 @@ public class BlessingMessageController {
     public Result<List<BlessingMessageResponse>> getMyMessages(
             @RequestParam(required = false) Integer limit,
             HttpServletRequest httpRequest) {
-        
+
         // 获取当前登录用户ID
         Long userId = UserContext.getCurrentUserId(httpRequest);
         if (userId == null) {
@@ -104,23 +105,19 @@ public class BlessingMessageController {
     /**
      * 删除祝福语
      *
-     * @param messageId 祝福语ID
+     * @param messageId   祝福语ID
      * @param httpRequest HTTP请求（用于获取用户ID）
      * @return 删除结果
      */
     @DeleteMapping("/{messageId}")
-    public Result<String> deleteMessage(
-            @PathVariable Long messageId,
-            HttpServletRequest httpRequest) {
-        
-        // 获取当前登录用户ID
-        Long userId = UserContext.getCurrentUserId(httpRequest);
-        if (userId == null) {
-            return Result.fail(401, "请先登录");
+    public Result<String> deleteMessage(@PathVariable Long messageId, HttpServletRequest httpRequest) {
+        //获取当前登录的用户ID
+        Long UserId = UserContext.getCurrentUserId(httpRequest);
+        if (UserId == null) {
+            return Result.fail(401, "，您还未登录账号，请先登录");
         }
-
         try {
-            boolean success = blessingMessageService.deleteMessage(messageId, userId);
+            boolean success = blessingMessageService.deleteMessage(messageId, UserId);
             if (success) {
                 return Result.success("删除成功");
             } else {
@@ -133,6 +130,7 @@ public class BlessingMessageController {
             log.error("删除祝福语失败", e);
             return Result.fail("删除失败: " + e.getMessage());
         }
+
     }
 }
 
