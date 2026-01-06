@@ -63,7 +63,7 @@ wechat:
 # JWT配置
 jwt:
   secret: your-jwt-secret-key-minimum-256-bits-change-this-in-production  # JWT密钥，生产环境请修改
-  expiration: 86400000  # Token过期时间（毫秒），默认24小时
+  expiration: 864000000  # Token过期时间（毫秒），默认24小时*10
 
 # 短信验证码配置
 sms:
@@ -73,4 +73,17 @@ sms:
   code:
     expire-minutes: 5  # 验证码有效期（分钟）
     send-interval-seconds: 60  # 发送间隔（秒），防止频繁发送
+
+# 图片模板配置
+image:
+  template:
+    base-path: ./templates  # 模板文件存储的基础路径（相对于项目根目录）
+    default-font-name: Microsoft YaHei  # 默认字体名称
+    default-font-size: 32  # 默认字体大小
+
+# 祝福语/弹幕配置
+blessing:
+  message:
+    max-length: 200  # 祝福语最大长度（字符）
+    default-limit: 50  # 默认查询数量
 

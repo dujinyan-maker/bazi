@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.project1.mapper.BlessingMessageMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.project1.pojo.domain.BlessingMessage">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="content" property="content"/>
+        <result column="status" property="status"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="updated_time" property="updatedTime"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM blessing_message WHERE id = #{id}
+    </select>
+
+    <select id="selectAllEnabled" resultMap="BaseResultMap">
+        SELECT * FROM blessing_message 
+        WHERE status = 1 
+        ORDER BY created_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM blessing_message 
+        WHERE user_id = #{userId} AND status = 1
+        ORDER BY created_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <insert id="insertMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO blessing_message (
+            user_id, content, status
+        ) VALUES (
+            #{userId}, #{content}, #{status}
+        )
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE blessing_message 
+        SET status = #{status} 
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteMessage">
+        DELETE FROM blessing_message WHERE id = #{id}
+    </delete>
+
+</mapper>
+
