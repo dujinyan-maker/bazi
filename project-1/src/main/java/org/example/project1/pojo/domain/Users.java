@@ -80,4 +80,19 @@ public class Users {
      * 最后登录时间
      */
     private Date lastLoginTime;
+
+    /**
+     * 用户身份
+     */
+    private String userRole;
+
+    /**
+     *用户注册时的账户
+     */
+    private String account;
+
+    /**
+     * 用户密码（BCrypt加密）
+     */
+    private String password;
 }

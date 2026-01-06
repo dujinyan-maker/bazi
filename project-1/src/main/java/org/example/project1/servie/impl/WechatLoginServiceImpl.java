@@ -91,13 +91,17 @@ public class WechatLoginServiceImpl implements WechatLoginService {
                 user.setNickname(request.getNickname() != null ? request.getNickname() : "微信用户");
                 user.setRealName(""); // 默认空字符串
                 user.setPhone(phone);
+                // 如果有手机号，将手机号设置为账号
+                if (phone != null && !phone.isEmpty()) {
+                    user.setAccount(phone);
+                }
                 user.setGender(0); // 默认未知
                 user.setIsMember(false);
                 user.setRegisterTime(new Date());
                 user.setLastLoginTime(new Date());
 
                 userMapper.insertUser(user);
-                log.info("创建新用户，userId: {}, phone: {}", user.getId(), phone);
+                log.info("创建新用户，userId: {}, phone: {}, account: {}", user.getId(), phone, user.getAccount());
             } else {
                 // 老用户，更新信息
                 boolean needUpdate = false;
@@ -106,6 +110,14 @@ public class WechatLoginServiceImpl implements WechatLoginService {
                 if (phone != null && (user.getPhone() == null || user.getPhone().isEmpty())) {
                     user.setPhone(phone);
                     needUpdate = true;
+                }
+                
+                // 如果账号为空且有手机号，将手机号设置为账号
+                if ((user.getAccount() == null || user.getAccount().isEmpty()) 
+                        && phone != null && !phone.isEmpty()) {
+                    user.setAccount(phone);
+                    userMapper.updateAccount(user.getId(), phone);
+                    log.info("更新用户账号，用户ID: {}, 账号: {}", user.getId(), phone);
                 }
                 
                 // 更新昵称和头像（如果提供了）
@@ -122,7 +134,7 @@ public class WechatLoginServiceImpl implements WechatLoginService {
                     userMapper.updateUser(user);
                 }
                 
-                log.info("用户登录，userId: {}, phone: {}", user.getId(), user.getPhone());
+                log.info("用户登录，userId: {}, phone: {}, account: {}", user.getId(), user.getPhone(), user.getAccount());
             }
 
             // 4. 生成JWT Token

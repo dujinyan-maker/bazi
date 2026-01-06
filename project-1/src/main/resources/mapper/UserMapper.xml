@@ -15,6 +15,9 @@
         <result column="register_time" property="registerTime"/>
         <result column="phone" property="phone"/>
         <result column="last_login_time" property="lastLoginTime"/>
+        <result column="account" property="account"/>
+        <result column="user_role" property="userRole"/>
+        <result column="password" property="password"/>
     </resultMap>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -33,11 +36,11 @@
         INSERT INTO users (
             nickname, real_name, birthday, gender, openid,
             is_member, member_start_time, member_expire_time,
-            register_time, phone, last_login_time
+            register_time, phone, last_login_time, account, user_role
         ) VALUES (
             #{nickname}, #{realName}, #{birthday}, #{gender}, #{openid},
             #{isMember}, #{memberStartTime}, #{memberExpireTime},
-            #{registerTime}, #{phone}, #{lastLoginTime}
+            #{registerTime}, #{phone}, #{lastLoginTime}, #{account}, #{userRole}
         )
     </insert>
 
@@ -58,6 +61,22 @@
 
     <update id="updateLastLoginTime">
         UPDATE users SET last_login_time = NOW() WHERE id = #{userId}
+    </update>
+
+    <select id="selectByAccount" resultMap="BaseResultMap">
+        SELECT * FROM users 
+        WHERE account = #{account} 
+           OR phone = #{account} 
+           OR email = #{account}
+        LIMIT 1
+    </select>
+
+    <update id="updatePassword">
+        UPDATE users SET password = #{password} WHERE id = #{userId}
+    </update>
+
+    <update id="updateAccount">
+        UPDATE users SET account = #{account} WHERE id = #{userId}
     </update>
 
 </mapper>

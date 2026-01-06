@@ -60,5 +60,31 @@ public interface UserMapper {
      * @return 影响行数
      */
     int updateLastLoginTime(@Param("userId") Long userId);
+
+    /**
+     * 根据账号查询用户（账号可能是手机号、邮箱或用户名）
+     *
+     * @param account 账号
+     * @return 用户信息
+     */
+    Users selectByAccount(@Param("account") String account);
+
+    /**
+     * 更新用户密码
+     *
+     * @param userId 用户ID
+     * @param password 加密后的密码
+     * @return 影响行数
+     */
+    int updatePassword(@Param("userId") Long userId, @Param("password") String password);
+
+    /**
+     * 更新用户账号
+     *
+     * @param userId 用户ID
+     * @param account 账号
+     * @return 影响行数
+     */
+    int updateAccount(@Param("userId") Long userId, @Param("account") String account);
 }
 

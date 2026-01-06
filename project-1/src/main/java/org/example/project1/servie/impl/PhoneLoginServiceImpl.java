@@ -120,10 +120,13 @@ public class PhoneLoginServiceImpl implements PhoneLoginService {
             user.setRealName(""); // 必填字段，设置为空字符串
             user.setNickname("用户" + phone.substring(7)); // 默认昵称：用户后4位
             user.setGender(0); // 默认未知
+            user.setUserRole("1");
+            user.setAccount(phone);
             user.setOpenid("phone_" + phone); // 使用phone_前缀作为openid，满足数据库约束
             user.setIsMember(false);
             user.setRegisterTime(new Date());
             user.setLastLoginTime(new Date());
+
 
             userMapper.insertUser(user);
             log.info("创建新用户，用户ID: {}, 手机号: {}, openid: {}", user.getId(), phone, user.getOpenid());
@@ -131,6 +134,14 @@ public class PhoneLoginServiceImpl implements PhoneLoginService {
             // 6. 老用户：更新最后登录时间
             userMapper.updateLastLoginTime(user.getId());
             user.setLastLoginTime(new Date());
+            
+            // 如果账号为空，将手机号设置为账号
+            if (user.getAccount() == null || user.getAccount().isEmpty()) {
+                user.setAccount(phone);
+                userMapper.updateAccount(user.getId(), phone);
+                log.info("更新用户账号，用户ID: {}, 账号: {}", user.getId(), phone);
+            }
+            
             log.info("用户登录，用户ID: {}, 手机号: {}", user.getId(), phone);
         }
 
