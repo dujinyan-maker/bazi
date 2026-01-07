@@ -72,7 +72,7 @@ public class Users {
     private Date registerTime;
 
     /**
-     * 手机号，必填且唯一
+     * 手机号，不是必填
      */
     private String phone;
 

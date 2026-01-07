@@ -70,12 +70,18 @@ public class AccountLoginController {
     @PostMapping("/register")
     public Result<LoginResponse> register(@RequestBody RegisterRequest request) {
         // 参数校验
-        if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
-            return Result.fail("手机号不能为空");
+        // phone 改为非必填，但如果提供了需要验证格式
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            String phone = request.getPhone().trim();
+            if (!phone.matches("^1[3-9]\\d{9}$")) {
+                return Result.fail("手机号格式错误，请输入11位手机号");
+            }
+            // 如果提供了手机号，则验证码必填
+            if (request.getCode() == null || request.getCode().trim().isEmpty()) {
+                return Result.fail("验证码不能为空");
+            }
         }
-        if (request.getCode() == null || request.getCode().trim().isEmpty()) {
-            return Result.fail("验证码不能为空");
-        }
+        
         if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
             return Result.fail("密码不能为空");
         }
@@ -100,15 +106,16 @@ public class AccountLoginController {
     /**
      * 注册时发送验证码
      * 复用手机号验证码发送接口
+     * 注意：phone 为可选参数，如果不提供则跳过验证码验证
      *
-     * @param phone 手机号
+     * @param phone 手机号（可选）
      * @return 发送结果
      */
     @PostMapping("/register/sendCode")
-    public Result<String> sendRegisterCode(@RequestParam String phone) {
-        // 参数校验
+    public Result<String> sendRegisterCode(@RequestParam(required = false) String phone) {
+        // phone 改为非必填，但如果提供了需要验证格式
         if (phone == null || phone.trim().isEmpty()) {
-            return Result.fail("手机号不能为空");
+            return Result.success("手机号未提供，注册时将跳过验证码验证");
         }
 
         String phoneTrimmed = phone.trim();
@@ -252,15 +259,15 @@ public class AccountLoginController {
     /**
      * 简化版注册接口（GET方式，用于快速测试）
      *
-     * @param phone 手机号
-     * @param code 验证码
+     * @param phone 手机号（可选）
+     * @param code 验证码（如果提供了手机号则必填）
      * @param password 密码
      * @return 注册响应
      */
     @GetMapping("/register")
     public Result<LoginResponse> registerSimple(
-            @RequestParam String phone,
-            @RequestParam String code,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String code,
             @RequestParam String password) {
         RegisterRequest request = new RegisterRequest();
         request.setPhone(phone);
@@ -272,11 +279,11 @@ public class AccountLoginController {
     /**
      * 简化版注册发送验证码接口（GET方式，用于快速测试）
      *
-     * @param phone 手机号
+     * @param phone 手机号（可选）
      * @return 发送结果
      */
     @GetMapping("/register/sendCode")
-    public Result<String> sendRegisterCodeSimple(@RequestParam String phone) {
+    public Result<String> sendRegisterCodeSimple(@RequestParam(required = false) String phone) {
         return sendRegisterCode(phone);
     }
 }

@@ -53,11 +53,39 @@ public class WechatLoginController {
      * 简化版登录接口（只传code，用于测试）
      * 注意：实际生产环境需要手机号授权
      *
-     * @param code 微信登录code
+     * @param requestBody 请求体，可以是字符串code或JSON对象
      * @return 登录响应
      */
     @PostMapping("/login/simple")
-    public Result<LoginResponse> simpleLogin(@RequestParam String code) {
+    public Result<LoginResponse> simpleLogin(@RequestBody String requestBody) {
+        // 处理请求体：可能是纯字符串code，也可能是JSON格式
+        String code = null;
+        
+        // 尝试解析为JSON对象
+        if (requestBody != null && requestBody.trim().startsWith("{")) {
+            try {
+                // 如果是JSON格式，提取code字段
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode jsonNode = mapper.readTree(requestBody);
+                if (jsonNode.has("code")) {
+                    code = jsonNode.get("code").asText();
+                } else {
+                    return Result.fail("请求体中缺少code字段");
+                }
+            } catch (Exception e) {
+                // 如果解析失败，当作纯字符串处理
+                code = requestBody.trim();
+            }
+        } else {
+            // 纯字符串，直接使用
+            code = requestBody != null ? requestBody.trim() : null;
+        }
+        
+        // 参数校验
+        if (code == null || code.isEmpty()) {
+            return Result.fail("code不能为空");
+        }
+        
         WechatLoginRequest request = new WechatLoginRequest();
         request.setCode(code);
         // 注意：简化版不传手机号，仅用于测试
