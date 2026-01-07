@@ -1,5 +1,6 @@
 package org.example.project1.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.example.project1.pojo.domain.Users;
@@ -11,7 +12,7 @@ import org.example.project1.pojo.domain.Users;
  * @Date 2026/01/03
  */
 @Mapper
-public interface UserMapper {
+public interface UserMapper extends BaseMapper<Users> {
 
     /**
      * 根据ID查询用户

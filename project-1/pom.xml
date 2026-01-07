@@ -5,8 +5,8 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<!-- 使用当前稳定版本的 Spring Boot，便于与 MyBatis Starter 兼容 -->
-		<version>3.2.0</version>
+		<!-- 使用 3.1.5 版本，与 MyBatis-Plus 兼容性更好 -->
+		<version>3.1.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>org.example</groupId>
@@ -63,11 +63,12 @@
 			<version>1.18.20</version>
 		</dependency>
 
-		<!-- MyBatis Spring Boot Starter -->
+		<!-- MyBatis-Plus Spring Boot Starter -->
+		<!-- 使用 3.5.4.1 版本，与 Spring Boot 3.2.0 兼容 -->
 		<dependency>
-			<groupId>org.mybatis.spring.boot</groupId>
-			<artifactId>mybatis-spring-boot-starter</artifactId>
-			<version>3.0.3</version>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-boot-starter</artifactId>
+			<version>3.5.4.1</version>
 		</dependency>
 
 		<!-- JWT -->

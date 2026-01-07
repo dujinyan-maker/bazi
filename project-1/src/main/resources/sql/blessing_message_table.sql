@@ -14,3 +14,4 @@ CREATE TABLE IF NOT EXISTS `blessing_message` (
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='祝福语/弹幕表';
 
+

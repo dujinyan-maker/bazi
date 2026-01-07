@@ -1,5 +1,6 @@
 package org.example.project1.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.example.project1.pojo.domain.ConversationHistory;
@@ -13,7 +14,7 @@ import java.util.List;
  * @Date 2026/01/04
  */
 @Mapper
-public interface ConversationHistoryMapper {
+public interface ConversationHistoryMapper extends BaseMapper<ConversationHistory> {
 
     /**
      * 根据会话ID查询对话历史（按时间正序）

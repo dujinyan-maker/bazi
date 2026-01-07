@@ -1,5 +1,8 @@
 package org.example.project1.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 /**
- * TODO
+ * 用户实体类
  *
  * @Author djy
  * @Date 2025/12/30 11:25
@@ -15,10 +18,12 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@TableName("users")
 public class Users {
     /**
      * 主键ID，自增
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**

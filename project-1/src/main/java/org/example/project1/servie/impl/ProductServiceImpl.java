@@ -28,14 +28,18 @@ public class ProductServiceImpl implements ProductService {
         List<product> list = new ArrayList<>();
         String[] split = ids.split(",");
         for (String id : split) {
-            list.add(productMapper.query(Integer.parseInt(id)));
+            // 使用 MyBatis-Plus 的 selectById 方法
+            product p = productMapper.selectById(Integer.parseInt(id));
+            if (p != null) {
+                list.add(p);
+            }
         }
         return list;
     }
 
     @Override
     public List<product> list() {
-        List<product> list=productMapper.list();
-        return list;
+        // 使用 MyBatis-Plus 的 selectList 方法
+        return productMapper.selectList(null);
     }
 }

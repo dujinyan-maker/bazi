@@ -1,5 +1,6 @@
 package org.example.project1.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.example.project1.pojo.domain.BlessingMessage;
@@ -13,7 +14,7 @@ import java.util.List;
  * @Date 2026/01/06
  */
 @Mapper
-public interface BlessingMessageMapper {
+public interface BlessingMessageMapper extends BaseMapper<BlessingMessage> {
 
     /**
      * 根据ID查询祝福语

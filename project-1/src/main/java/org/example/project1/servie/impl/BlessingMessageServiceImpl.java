@@ -1,5 +1,7 @@
 package org.example.project1.servie.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.example.project1.mapper.BlessingMessageMapper;
 import org.example.project1.mapper.UserMapper;
@@ -63,8 +65,7 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
         message.setStatus(1);
 
         //3.插入到数据库中
-
-        blessingMessageMapper.insertMessage(message);
+        blessingMessageMapper.insert(message);
         log.info("用户 {} 添加祝福语，ID: {}, 内容: {}", userId, message.getId(), content);
         //4.构建响应
         return buildResponse(message);
@@ -79,9 +80,14 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
 
     @Override
     public List<BlessingMessageResponse> getAllMessages(Integer limit) {
-        Integer queryLimit = limit !=null &&limit > 0 ? limit : defaultLimit;
-        List<BlessingMessage> message = blessingMessageMapper.selectAllEnabled(queryLimit);
-        return convertToResponseList(message);
+        Integer queryLimit = limit != null && limit > 0 ? limit : defaultLimit;
+        // 使用 MyBatis-Plus 的 QueryWrapper 查询
+        LambdaQueryWrapper<BlessingMessage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BlessingMessage::getStatus, 1)
+               .orderByDesc(BlessingMessage::getCreatedTime)
+               .last("LIMIT " + queryLimit);
+        List<BlessingMessage> messages = blessingMessageMapper.selectList(wrapper);
+        return convertToResponseList(messages);
     }
 
     /**
@@ -94,7 +100,13 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
     @Override
     public List<BlessingMessageResponse> getUserMessages(Long userId, Integer limit) {
         Integer queryLimit = limit != null && limit > 0 ? limit : defaultLimit;
-        List<BlessingMessage> messages = blessingMessageMapper.selectByUserId(userId, queryLimit);
+        // 使用 MyBatis-Plus 的 QueryWrapper 查询
+        LambdaQueryWrapper<BlessingMessage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BlessingMessage::getUserId, userId)
+               .eq(BlessingMessage::getStatus, 1)
+               .orderByDesc(BlessingMessage::getCreatedTime)
+               .last("LIMIT " + queryLimit);
+        List<BlessingMessage> messages = blessingMessageMapper.selectList(wrapper);
         return convertToResponseList(messages);
     }
 
@@ -137,7 +149,10 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
             throw new IllegalArgumentException("无权删除他人的祝福语");
         }
         //3.软删除(仅限用户端看不到，但是数据库中这条数据还是存在)
-        blessingMessageMapper.updateStatus(messageId, 0);
+        LambdaUpdateWrapper<BlessingMessage> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(BlessingMessage::getId, messageId)
+                     .set(BlessingMessage::getStatus, 0);
+        blessingMessageMapper.update(null, updateWrapper);
         log.info("用户 {} 删除祝福语，ID: {}", userId, messageId);
         return true;
     }

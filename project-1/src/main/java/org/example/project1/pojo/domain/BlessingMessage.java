@@ -1,5 +1,8 @@
 package org.example.project1.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,11 +18,13 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@TableName("blessing_message")
 public class BlessingMessage {
 
     /**
      * 主键ID
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
