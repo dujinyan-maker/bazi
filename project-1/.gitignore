@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### SSL Certificates (开发环境自签名证书，生产证书不应忽略) ###
+src/main/resources/ssl/keystore.p12
+src/main/resources/ssl/*.p12
+src/main/resources/ssl/*.key
+src/main/resources/ssl/*.csr
+src/main/resources/ssl/*.crt
+src/main/resources/ssl/*.pem
+!src/main/resources/ssl/README.md

@@ -37,6 +37,19 @@ mybatis-plus:
 server:
   port: 8081
   address: 0.0.0.0
+  # SSL/HTTPS 配置（使用 WSS 协议）
+  # 需要先生成证书：运行 generate-ssl-cert.bat（Windows）或 generate-ssl-cert.sh（Linux/Mac）
+  # 证书文件位置：src/main/resources/ssl/keystore.p12
+  ssl:
+    enabled: true  # 启用 SSL，使用 HTTPS/WSS
+    key-store: classpath:ssl/keystore.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
+    key-alias: project1
+    key-password: changeit
+  # HTTP 自动重定向到 HTTPS（可选，需要配置 HttpsRedirectConfig）
+  # http:
+  #   port: 8080
 
 # 百炼千帆（通义千问）配置
 dashscope:

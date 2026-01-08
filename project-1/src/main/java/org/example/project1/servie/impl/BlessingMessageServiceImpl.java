@@ -10,6 +10,7 @@ import org.example.project1.pojo.domain.Users;
 import org.example.project1.pojo.dto.BlessingMessageRequest;
 import org.example.project1.pojo.dto.BlessingMessageResponse;
 import org.example.project1.servie.BlessingMessageService;
+import org.example.project1.servie.BlessingMessageWebSocketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,9 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private BlessingMessageWebSocketService webSocketService;
+
     @Value("${blessing.message.max-length:200}")
     private Integer maxContentLength;
 
@@ -50,11 +54,11 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
     @Override
     public BlessingMessageResponse sendMessage(Long userId, BlessingMessageRequest request) {
         //1.参数校验
-        if (request.getContent() ==null && request.getContent().trim().isEmpty()){
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
             throw new IllegalArgumentException("祝福语内容不能为空");
         }
 
-        String content =request.getContent().trim();
+        String content = request.getContent().trim();
         if (content.length() > maxContentLength){
             throw new IllegalArgumentException("祝福语内容长度不能超过 " + maxContentLength + " 个字符");
         }
@@ -67,8 +71,20 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
         //3.插入到数据库中
         blessingMessageMapper.insert(message);
         log.info("用户 {} 添加祝福语，ID: {}, 内容: {}", userId, message.getId(), content);
+        
         //4.构建响应
-        return buildResponse(message);
+        BlessingMessageResponse response = buildResponse(message);
+        
+        //5.通过 WebSocket 广播新消息给所有连接的客户端
+        try {
+            webSocketService.broadcastBlessingMessage(response);
+            log.info("祝福语消息已广播");
+        } catch (Exception e) {
+            log.error("广播祝福语消息失败", e);
+            // 广播失败不影响主流程，继续返回响应
+        }
+        
+        return response;
 
     }
 
@@ -116,26 +132,6 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
      * @param userId 用户ID（用于验证权限）
      * @return
      */
-//    @Override
-//    public boolean deleteMessage(Long messageId, Long userId) {
-//        // 1. 查询祝福语
-//        BlessingMessage message = blessingMessageMapper.selectById(messageId);
-//        if (message == null) {
-//            throw new IllegalArgumentException("祝福语不存在");
-//        }
-//
-//        // 2. 验证权限（只能删除自己的祝福语）
-//        if (!message.getUserId().equals(userId)) {
-//            throw new IllegalArgumentException("无权删除他人的祝福语");
-//        }
-//
-//        // 3. 软删除（更新状态）
-//        blessingMessageMapper.updateStatus(messageId, 0);
-//        log.info("用户 {} 删除祝福语，ID: {}", userId, messageId);
-//
-//        return true;
-//    }
-
 
     @Override
     public boolean deleteMessage(Long messageId, Long userId) {
@@ -207,5 +203,6 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
             return response;
         }).collect(Collectors.toList());
     }
+
 }
 

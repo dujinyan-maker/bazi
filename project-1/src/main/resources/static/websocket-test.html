@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 祝福语测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .messages {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #f9f9f9;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .message-item {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            padding-left: 10px;
+            background: white;
+        }
+        .blessing-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #28a745;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 3px;
+            background: #007bff;
+            color: white;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        h3 {
+            color: #666;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket 祝福语测试工具</h1>
+    
+    <div class="container">
+        <!-- 左侧：WebSocket 连接 -->
+        <div class="panel">
+            <h2>WebSocket 连接</h2>
+            <div id="status" class="status disconnected">未连接</div>
+            <div class="controls">
+                <button id="connectBtn" onclick="connect()">连接</button>
+                <button id="disconnectBtn" onclick="disconnect()" disabled>断开</button>
+                <button onclick="sendPing()" id="pingBtn" disabled>发送心跳</button>
+                <button onclick="clearMessages()">清空消息</button>
+            </div>
+            <label>连接地址：</label>
+            <input type="text" id="wsUrl" value="wss://192.168.1.10:8081/ws/blessing">
+            <small style="color: #666;">使用 WSS 协议（WebSocket Secure）</small>
+            <h3>收到的消息：</h3>
+            <div id="messages" class="messages">
+                <div style="color: #999; text-align: center; padding: 20px;">
+                    等待连接...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧：发送祝福语 -->
+        <div class="panel">
+            <h2>发送祝福语</h2>
+            <label>API 地址：</label>
+            <input type="text" id="apiUrl" value="https://192.168.1.10:8081">
+            <small style="color: #666;">使用 HTTPS 协议</small>
+            <label>Token（Bearer）：</label>
+            <input type="text" id="token" placeholder="输入 JWT Token（从登录接口获取）">
+            <label>祝福语内容：</label>
+            <textarea id="blessingContent" placeholder="输入祝福语内容">测试祝福语：祝大家新年快乐！</textarea>
+            <button onclick="sendBlessing()">发送祝福语</button>
+            <h3>祝福语列表：</h3>
+            <div id="blessingList" class="messages">
+                <div style="color: #999; text-align: center; padding: 20px;">
+                    等待接收祝福语列表...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let blessingList = [];
+
+        function updateStatus(text, connected) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = text;
+            statusDiv.className = connected ? 'status connected' : 'status disconnected';
+            
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+            document.getElementById('pingBtn').disabled = !connected;
+        }
+
+        function addMessage(type, data) {
+            const messagesDiv = document.getElementById('messages');
+            
+            // 如果是第一条消息，清空提示
+            if (messagesDiv.children.length === 1 && messagesDiv.children[0].style.color === 'rgb(153, 153, 153)') {
+                messagesDiv.innerHTML = '';
+            }
+            
+            const div = document.createElement('div');
+            div.className = 'message-item';
+            const time = new Date().toLocaleTimeString();
+            div.innerHTML = `<strong>[${time}] ${type}:</strong><pre style="margin: 5px 0; white-space: pre-wrap;">${JSON.stringify(data, null, 2)}</pre>`;
+            messagesDiv.insertBefore(div, messagesDiv.firstChild);
+            
+            // 限制显示数量
+            while (messagesDiv.children.length > 50) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+        }
+
+        function updateBlessingList(blessings) {
+            const listDiv = document.getElementById('blessingList');
+            
+            if (blessings && blessings.length > 0) {
+                listDiv.innerHTML = '';
+                blessings.forEach(msg => {
+                    const div = document.createElement('div');
+                    div.className = 'blessing-item';
+                    div.innerHTML = `
+                        <strong style="color: #007bff;">${msg.nickname || '匿名'}:</strong> ${msg.content}
+                        <br><small style="color: #999;">ID: ${msg.id} | ${new Date(msg.createdTime).toLocaleString()}</small>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            } else {
+                listDiv.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">暂无祝福语</div>';
+            }
+        }
+
+        function connect() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            updateStatus('连接中...', false);
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                updateStatus('✅ 已连接', true);
+                addMessage('连接成功', { status: 'WebSocket 连接已建立' });
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    addMessage('收到消息', message);
+                    
+                    if (message.type === 'blessing_list') {
+                        blessingList = message.data || [];
+                        updateBlessingList(blessingList);
+                        addMessage('祝福语列表', { count: blessingList.length, message: '列表已更新' });
+                    } else if (message.type === 'new_blessing') {
+                        // 添加到列表顶部
+                        blessingList.unshift(message.data);
+                        // 限制长度
+                        if (blessingList.length > 100) {
+                            blessingList = blessingList.slice(0, 100);
+                        }
+                        updateBlessingList(blessingList);
+                        addMessage('新祝福语', message.data);
+                    } else if (message.type === 'connected') {
+                        addMessage('连接确认', message.message);
+                    } else if (message.type === 'pong') {
+                        addMessage('心跳响应', 'pong');
+                    }
+                } catch (e) {
+                    addMessage('解析错误', { error: e.message, raw: event.data });
+                }
+            };
+            
+            ws.onclose = (event) => {
+                updateStatus('❌ 已断开', false);
+                addMessage('断开连接', { code: event.code, reason: event.reason || '无原因' });
+            };
+            
+            ws.onerror = (error) => {
+                updateStatus('❌ 连接错误', false);
+                addMessage('错误', { error: '连接失败，请检查地址和网络' });
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendPing() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send('ping');
+                addMessage('发送心跳', 'ping');
+            } else {
+                alert('WebSocket 未连接');
+            }
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+            addMessage('清空', '消息已清空');
+        }
+
+        async function sendBlessing() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const token = document.getElementById('token').value;
+            const content = document.getElementById('blessingContent').value;
+            
+            if (!token) {
+                alert('请先输入 Token（从登录接口获取）');
+                return;
+            }
+            
+            if (!content || !content.trim()) {
+                alert('请输入祝福语内容');
+                return;
+            }
+            
+            try {
+                addMessage('发送请求', { url: `${apiUrl}/blessing/send`, content });
+                
+                const response = await fetch(`${apiUrl}/blessing/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ content: content.trim() })
+                });
+                
+                const result = await response.json();
+                if (result.code === 200) {
+                    alert('✅ 发送成功！\n\nWebSocket 应该收到 new_blessing 消息，请查看左侧消息面板。');
+                    addMessage('发送成功', { response: result });
+                    // 清空输入框
+                    document.getElementById('blessingContent').value = '';
+                } else {
+                    alert(`❌ 发送失败: ${result.message}`);
+                    addMessage('发送失败', { error: result.message, code: result.code });
+                }
+            } catch (error) {
+                alert(`❌ 请求失败: ${error.message}`);
+                addMessage('请求失败', { error: error.message });
+            }
+        }
+
+        // 页面加载完成后的提示
+        window.onload = () => {
+            console.log('测试页面已加载');
+            console.log('使用步骤：');
+            console.log('1. 填写 Token（从登录接口获取）');
+            console.log('2. 点击"连接"按钮');
+            console.log('3. 查看收到的消息');
+            console.log('4. 发送祝福语测试');
+        };
+    </script>
+</body>
+</html>
+
