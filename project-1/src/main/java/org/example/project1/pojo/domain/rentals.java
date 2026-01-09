@@ -1,5 +1,7 @@
 package org.example.project1.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -85,12 +87,14 @@ public class rentals {
     private String terminationReason;
 
     /**
-     * 创建时间
+     * 创建时间（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT)
     private Date createdAt;
 
     /**
-     * 最后更新时间
+     * 最后更新时间（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updatedAt;
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.project1.mapper.PreyBlessingCardsMapper">
+
+    <insert id="insertPreyBlessingCards">
+        INSERT INTO prey_blessing_cards (user_id,  blessing_type_id, user_message,generated_message, generated_at, share_count, saved_at)
+        VALUES (#{userId},  #{blessingTypeId},#{userMessage}, #{generatedMessage}, #{generatedAt}, #{shareCount}, #{savedAt})
+    </insert>
+</mapper>

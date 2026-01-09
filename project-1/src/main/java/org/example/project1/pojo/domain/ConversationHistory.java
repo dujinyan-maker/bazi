@@ -1,6 +1,8 @@
 package org.example.project1.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -47,8 +49,9 @@ public class ConversationHistory {
     private String content;
 
     /**
-     * 创建时间
+     * 创建时间（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT)
     private Date createdTime;
 }
 

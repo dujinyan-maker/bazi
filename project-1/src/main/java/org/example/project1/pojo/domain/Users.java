@@ -1,6 +1,8 @@
 package org.example.project1.pojo.domain;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -67,8 +69,9 @@ public class Users {
     private Date memberExpireTime;
 
     /**
-     * 用户注册时间
+     * 用户注册时间（自动填充）
      */
+    @TableField(fill = FieldFill.INSERT)
     private Date registerTime;
 
     /**
@@ -100,4 +103,11 @@ public class Users {
      * 用户密码（BCrypt加密）
      */
     private String password;
+
+    /**
+     * 用书剩余的祈福次数
+     * 数据库列名：prebless_number
+     */
+    @TableField("prey_bless_number")
+    private Integer preyBlessNumber;
 }

@@ -211,7 +211,7 @@ public class AccountLoginServiceImpl implements AccountLoginService {
             user.setOpenid("account_" + user.getAccount());
         }
         user.setIsMember(false);
-        user.setRegisterTime(new Date());
+        // registerTime 会由 MyBatis-Plus 自动填充，无需手动设置
         user.setLastLoginTime(new Date());
 
         // 5. 加密密码

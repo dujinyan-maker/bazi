@@ -125,7 +125,7 @@ public class PhoneLoginServiceImpl implements PhoneLoginService {
             user.setAccount(phone);
             user.setOpenid("phone_" + phone); // 使用phone_前缀作为openid，满足数据库约束
             user.setIsMember(false);
-            user.setRegisterTime(new Date());
+            // registerTime 会由 MyBatis-Plus 自动填充，无需手动设置
             user.setLastLoginTime(new Date());
 
 

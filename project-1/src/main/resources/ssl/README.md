@@ -53,3 +53,4 @@ openssl pkcs12 -export -in server.crt -inkey server.key -out keystore.p12 -name 
 3. **证书位置**：证书文件应放在 `src/main/resources/ssl/` 目录下
 4. **Git 忽略**：建议将证书文件添加到 `.gitignore`（生产环境证书除外）
 
+

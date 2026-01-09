@@ -67,8 +67,9 @@ public class BlessingMessageServiceImpl implements BlessingMessageService {
         message.setUserId(userId);
         message.setContent(content);
         message.setStatus(1);
+        // 注意：createdTime 和 updatedTime 会由 MyBatis-Plus 自动填充，无需手动设置
 
-        //3.插入到数据库中
+        //3.插入到数据库中（自动填充创建时间和更新时间）
         blessingMessageMapper.insert(message);
         log.info("用户 {} 添加祝福语，ID: {}, 内容: {}", userId, message.getId(), content);
         

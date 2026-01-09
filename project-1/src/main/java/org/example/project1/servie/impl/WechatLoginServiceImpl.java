@@ -97,7 +97,7 @@ public class WechatLoginServiceImpl implements WechatLoginService {
                 }
                 user.setGender(0); // 默认未知
                 user.setIsMember(false);
-                user.setRegisterTime(new Date());
+                // registerTime 会由 MyBatis-Plus 自动填充，无需手动设置
                 user.setLastLoginTime(new Date());
 
                 userMapper.insertUser(user);
